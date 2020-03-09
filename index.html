@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Storage Dropbox</title>
+        <link href="https://transloadit.edgly.net/releases/uppy/v1.9.3/uppy.min.css" rel="stylesheet">
+
+        <style>
+            body {
+                padding: 0;
+                margin: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+
+            .container {
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            }
+
+            .container div {
+                width: 70vw;
+            }
+        </style>
+    </head>
+    <body>
+        <section class="container">
+            
+            <div id="drag-drop-area"></div>
+            <div id="progress-bar"></div>
+            
+        </section>
+
+        <script src="https://transloadit.edgly.net/releases/uppy/v1.9.3/uppy.min.js"></script>
+        <script>
+            var uppy = Uppy.Core({ autoProceed: true })
+                .use(Uppy.DragDrop, {
+                    inline: true,
+                    target: '#drag-drop-area',
+                    width: '100%',
+                    height: '100%'
+                })
+                .use(Uppy.AwsS3, {
+                    getUploadParameters (file) {
+                        // Send a request to our PHP signing endpoint.
+                        return fetch(`/presignedUrl?name=${file.name}`)
+                            .then((response) => {
+                                return response.text().then((url) => {
+                                    return {
+                                        method: 'PUT',
+                                        url: url,
+                                        fields: {},
+                                        headers: {}
+                                    }
+                                })
+                            })
+                            .then((data) => {
+                                // Return an object in the correct shape.
+                                return {
+                                    method: data.method,
+                                    url: data.url,
+                                    fields: data.fields,
+                                    // Provide content type header required by S3
+                                    headers: {
+                                        'Content-Type': file.type
+                                    }
+                                }
+                            })
+                        }
+                    }
+                )
+                .use(Uppy.ProgressBar, {
+                    target: '#progress-bar'
+                })
+
+            uppy.on('complete', (result) => {
+                console.log('Upload complete! We’ve uploaded these files:', result.successful)
+            })
+        </script>
+    </body>
+</html>
