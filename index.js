@@ -1,6 +1,7 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const session = require('express-session')
+const auth = require('express-basic-auth')
 const companion = require('@uppy/companion')
 const str = require('@supercharge/strings')
 
@@ -8,6 +9,13 @@ if (typeof process.env.S3_KEY == 'undefined'
         || typeof process.env.S3_SECRET == 'undefined') {
 
     console.log('ERROR environment variables S3_KEY, S3_SECRET are required.')
+    process.exit(1)        
+}
+
+if (typeof process.env.AUTH_USER != 'undefined' 
+        && typeof process.env.AUTH_PASS == 'undefined') {
+
+    console.log('ERROR environment variable AUTH_PASS must be defined if AUTH_USER is.')
     process.exit(1)        
 }
 
@@ -35,10 +43,29 @@ const options = {
     debug: true
 }
 
+function authorizer(username, password) {
+    const userMatches = auth.safeCompare(username, process.env.AUTH_USER)
+    const passwordMatches = auth.safeCompare(password, process.env.AUTH_PASS)
+ 
+    return userMatches & passwordMatches
+}
+
+const auth_user = process.env.AUTH_USER
+const auth_config = {
+    authorizer: authorizer,
+    challenge: true,
+}
+
+
 Object.assign(options.providerOptions.s3.awsClientOptions, process.env.S3_ENDPOINT && { endpoint: process.env.S3_ENDPOINT })
 
 let app = express()
 app.use(bodyParser.json())
+
+if (typeof auth_user != 'undefined') {
+    app.use(auth(auth_config))
+}
+
 app.use(session({
     secret: process.env.SESSION_SECRET || str.random(32),
     resave: true,

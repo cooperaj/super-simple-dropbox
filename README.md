@@ -27,9 +27,12 @@ Ensure the necessary environment variables are configured.
 | S3_SECRET | Yes | | The 'password' |
 | S3_ENDPOINT | No | Whatever AWS uses by default | The endpoint to connect to, this will be the URI of your Minio instance e.g. `https://storage.example.com` |
 | S3_BUCKET | No | 'uploads' | The bucket to upload to - the configured user must have the correct policy permissions |
+| S3_REGION | No | 'us-east-1' | The region in which the bucket resides |
 | PORT | No | 8080 | The port this service listens on |
 | SESSION_SECRET | No | A random value | The session hashing salt value. Randomly chosen unless specified |
 | UPPY_SECRET | No | A random value | The Uppy hashing salt value. Randomly chosen unless specified |
+| AUTH_USER | No | | A basic auth user |
+| AUTH_PASS | No | | The password for the auth user |
 
 ```bash
 # Will start the service listening on 0.0.0.0:${PORT}
