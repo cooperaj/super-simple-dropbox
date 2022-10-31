@@ -21,17 +21,15 @@ if (typeof process.env.AUTH_USER != 'undefined'
 
 const port = process.env.PORT || 8080
 const options = {
-    providerOptions: {
-        s3: {
-            getKey: (req, filename, metadata) => filename,
-            key: process.env.S3_KEY,
-            secret: process.env.S3_SECRET || 'uploads',
-            bucket: process.env.S3_BUCKET,
-            region: process.env.S3_REGION || 'us-east-1',
-            acl: 'private',
-            awsClientOptions: {
-                s3ForcePathStyle: true
-            }
+    s3: {
+        getKey: (req, filename, metadata) => filename,
+        key: process.env.S3_KEY,
+        secret: process.env.S3_SECRET || 'uploads',
+        bucket: process.env.S3_BUCKET,
+        region: process.env.S3_REGION || 'us-east-1',
+        acl: 'private',
+        awsClientOptions: {
+            s3ForcePathStyle: true
         }
     },
     server: {
@@ -40,6 +38,7 @@ const options = {
     },
     filePath: '/tmp',
     secret: process.env.UPPY_SECRET || str.random(32),
+    uploadUrls: [process.env.APP_DOMAIN],
     debug: true
 }
 
@@ -57,7 +56,7 @@ const auth_config = {
 }
 
 
-Object.assign(options.providerOptions.s3.awsClientOptions, process.env.S3_ENDPOINT && { endpoint: process.env.S3_ENDPOINT })
+Object.assign(options.s3.awsClientOptions, process.env.S3_ENDPOINT && { endpoint: process.env.S3_ENDPOINT })
 
 let app = express()
 app.use(bodyParser.json())
@@ -93,7 +92,9 @@ app.use((req, res, next) => {
     next()
 })
   
-app.use(companion.app(options))
+const { app: companionApp } = companion.app(options)
+
+app.use(companionApp)
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
